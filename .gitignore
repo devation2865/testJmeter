@@ -1,0 +1,34 @@
+# Docker
+.dockerignore
+docker-compose.override.yml
+
+# Results and logs
+results/
+*.log
+*.jtl
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Node.js
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Java
+target/
+*.class
+*.jar
+*.war
+
+# Temporary files
+*.tmp
+*.temp

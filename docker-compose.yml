@@ -1,0 +1,107 @@
+version: '3.8'
+
+services:
+  # Nginx負載均衡器
+  nginx:
+    image: nginx:alpine
+    container_name: scaling-nginx
+    ports:
+      - "80:80"
+      - "8080:8080"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - app
+    networks:
+      - scaling-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Node.js應用服務器
+  app-node:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    container_name: scaling-app-node
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+    ports:
+      - "3000:3000"
+    networks:
+      - scaling-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # Spring Boot應用服務器
+  app-spring:
+    build:
+      context: ./app-spring
+      dockerfile: Dockerfile
+    container_name: scaling-app-spring
+    environment:
+      - SERVER_PORT=3001
+      - SPRING_PROFILES_ACTIVE=default
+    ports:
+      - "3001:3001"
+    networks:
+      - scaling-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  # JMeter測試工具
+  jmeter:
+    image: justb4/jmeter:latest
+    container_name: scaling-jmeter
+    volumes:
+      - ./jmeter:/tests
+      - ./results:/results
+    networks:
+      - scaling-network
+    depends_on:
+      - nginx
+    environment:
+      - JMETER_ARGS=-n -t /tests/scaling-test.jmx -l /results/results.jtl -e -o /results/report
+    profiles:
+      - test
+
+networks:
+  scaling-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  app-data:
