@@ -9,7 +9,7 @@ param(
 )
 
 # Configuration
-$JMETER_IMAGE = "justb4/jmeter:latest"
+$JMETER_IMAGE = "kubeshop/jmeter:latest"
 $TEST_PLAN = "headless-test.jmx"
 $RESULTS_DIR = "./results"
 $TIMESTAMP = Get-Date -Format "yyyyMMdd_HHmmss"
@@ -76,6 +76,7 @@ function Start-SingleTest {
         "-v", "$(Get-Location)\jmeter:/tests",
         "-v", "$(Get-Location)\${testResultsDir}:/results",
         "-e", "JMETER_ARGS=-n -t /tests/$TEST_PLAN -l /results/results.jtl -e -o /results/report -Jthreads=$Threads -Jduration=$Duration -Jrampup=$Rampup",
+        "-e", "JVM_ARGS=-Djava.awt.headless=true",
         $JMETER_IMAGE
     )
     
