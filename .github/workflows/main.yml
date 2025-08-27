@@ -1,0 +1,17 @@
+name: Download Docker Images
+on: workflow_dispatch
+
+jobs:
+  download:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download images
+        run: |
+          docker pull nginx:alpine
+          docker save nginx:alpine > nginx-alpine.tar
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-images
+          path: "*.tar"
